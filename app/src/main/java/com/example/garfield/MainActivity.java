@@ -92,6 +92,8 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseRecyclerAdapter<Chatbot, MessageViewHolder>
             mFirebaseAdapter;
 
+    private PersonalInfo userpd = new PersonalInfo();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -124,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
         String user = "Users/" + getID();
         DatabaseReference messagesRef = mDatabase.getReference().child(path);
         DatabaseReference userRef = mDatabase.getReference().child(user);
+        DatabaseReference userPD = mDatabase.getReference().child(info);
 
 
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -134,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else{
                     PersonalInfo p = new
-                            PersonalInfo(getUserName(),null,null,null,null,null,null);
+                            PersonalInfo(getUserName(),"Fill Emergency Contact","Fill Emergency Contact No","Fill Personal No","Fill address","Fill Doctor","Fill Doctor No");
                     mDatabase.getReference().child(info).setValue(p);
                 }
             }
@@ -142,6 +145,20 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
 
+            }
+        });
+
+
+        // Attach a listener to read the data at our posts reference
+        userPD.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                userpd = dataSnapshot.getValue(PersonalInfo.class);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Error handle
             }
         });
 
@@ -183,7 +200,13 @@ public class MainActivity extends AppCompatActivity {
         // See MyButtonObserver.java for details
         mBinding.messageEditText.addTextChangedListener(new MyButtonObserver(mBinding.sendButton));
 
-        final String[] h = {""};
+        Chatbot Welcome = new
+                Chatbot("Hello! I am Garfield, your Personal Assistant, How may I help you?",
+                "Bot",
+                getUserPhotoUrl(),
+                null /* no image */) ;
+        mDatabase.getReference().child(path).push().setValue(Welcome);
+
                 // When the send button is clicked, send a text message
         mBinding.sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -209,12 +232,24 @@ public class MainActivity extends AppCompatActivity {
                         new Response.Listener<String>() {
                             @Override
                             public void onResponse(String response) {
-                                Chatbot answer = new
-                                        Chatbot(response,
-                                        "Bot",
-                                        getUserPhotoUrl(),
-                                        null /* no image */) ;
-                                mDatabase.getReference().child(path).push().setValue(answer);
+                                if (response == "ff"){
+
+
+
+
+
+
+
+
+                                }
+                                else {
+                                    Chatbot answer = new
+                                            Chatbot(response,
+                                            "Bot",
+                                            getUserPhotoUrl(),
+                                            null /* no image */) ;
+                                    mDatabase.getReference().child(path).push().setValue(answer);
+                                }
                             }
                         }, new Response.ErrorListener() {
                     @Override
@@ -230,6 +265,13 @@ public class MainActivity extends AppCompatActivity {
                     protected Map<String, String> getParams(){
                         Map<String, String> paramV = new HashMap<>();
                         paramV.put("msg", ms);
+                        paramV.put("address",userpd.getAddress());
+                        paramV.put("username",userpd.getName());
+                        paramV.put("ec",userpd.getEmergencyContact());
+                        paramV.put("ecn",userpd.getEmergencyContactNo());
+                        paramV.put("d",userpd.getDoctor());
+                        paramV.put("dn",userpd.getDoctorNo());
+                        paramV.put("pn",userpd.getPersonalNo());
                         return paramV;
                     }
                 };
