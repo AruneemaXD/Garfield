@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
             mFirebaseAdapter;
 
     private PersonalInfo userpd = new PersonalInfo();
+    private PersonalInfo receive = new PersonalInfo();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         mSignInClient = GoogleSignIn.getClient(this, gso);
 
+
         // Initialize Realtime Database
         mDatabase = FirebaseDatabase.getInstance();
         String path = "Users/" + getID() + "/" + MESSAGES_CHILD;
@@ -136,9 +138,10 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 else{
-                    PersonalInfo p = new
-                            PersonalInfo(getUserName(),"Fill Emergency Contact","Fill Emergency Contact No","Fill Personal No","Fill address","Fill Doctor","Fill Doctor No");
-                    mDatabase.getReference().child(info).setValue(p);
+                    Intent back = getIntent();
+                    receive = (PersonalInfo) back.getSerializableExtra("Key");
+                    Log.i(TAG,receive.getDoctor());
+                    mDatabase.getReference().child(info).setValue(receive);
                 }
             }
 

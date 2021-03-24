@@ -106,7 +106,7 @@ public class SignInActivity extends AppCompatActivity {
                         // If sign in succeeds the auth state listener will be notified and logic to
                         // handle the signed in user can be handled in the listener.
                         Log.d(TAG, "signInWithCredential:success");
-                        startActivity(new Intent(SignInActivity.this, MainActivity.class));
+                        startActivity(new Intent(SignInActivity.this,AccountDetailsActivity.class));
                         finish();
                     }
                 })

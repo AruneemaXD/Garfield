@@ -15,7 +15,9 @@
  */
 package com.example.garfield;
 
-public class PersonalInfo {
+import java.io.Serializable;
+
+public class PersonalInfo implements Serializable {
 
     private String name;
     private String emergencyContact;
