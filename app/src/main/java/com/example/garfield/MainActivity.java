@@ -34,9 +34,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.chaquo.python.PyObject;
-import com.chaquo.python.Python;
-import com.chaquo.python.android.AndroidPlatform;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.firebase.ui.database.FirebaseRecyclerOptions;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -49,13 +52,17 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.example.garfield.databinding.ActivityMainBinding;
+import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -95,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(mBinding.getRoot());
 
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-
         // Initialize Firebase Auth and check if the user is signed in
         mFirebaseAuth = FirebaseAuth.getInstance();
         if (mFirebaseAuth.getCurrentUser() == null) {
@@ -113,7 +119,33 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize Realtime Database
         mDatabase = FirebaseDatabase.getInstance();
-        DatabaseReference messagesRef = mDatabase.getReference().child(MESSAGES_CHILD);
+        String path = "Users/" + getID() + "/" + MESSAGES_CHILD;
+        String info = "Users/" + getID() + "/" + "PersonalDetails";
+        String user = "Users/" + getID();
+        DatabaseReference messagesRef = mDatabase.getReference().child(path);
+        DatabaseReference userRef = mDatabase.getReference().child(user);
+
+
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.hasChild("PersonalDetails")) {
+                    return;
+                }
+                else{
+                    PersonalInfo p = new
+                            PersonalInfo(getUserName(),null,null,null,null,null,null);
+                    mDatabase.getReference().child(info).setValue(p);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+
 
         // The FirebaseRecyclerAdapter class comes from the FirebaseUI library
         // See: https://github.com/firebase/FirebaseUI-Android
@@ -151,14 +183,7 @@ public class MainActivity extends AppCompatActivity {
         // See MyButtonObserver.java for details
         mBinding.messageEditText.addTextChangedListener(new MyButtonObserver(mBinding.sendButton));
 
-        if (! Python.isStarted()) {
-            Python.start(new AndroidPlatform(this));
-        }
-
-        Python py = Python.getInstance();
-        final PyObject pyobj = py.getModule("mine");
-
-
+        final String[] h = {""};
                 // When the send button is clicked, send a text message
         mBinding.sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -170,20 +195,49 @@ public class MainActivity extends AppCompatActivity {
                         getUserPhotoUrl(),
                         null /* no image */);
 
-                mDatabase.getReference().child(MESSAGES_CHILD).push().setValue(cbMessage);
+                mDatabase.getReference().child(path).push().setValue(cbMessage);
                 mBinding.messageEditText.setText("");
 
 
 
-                PyObject obj = pyobj.callAttr("helloworld",ms);
-                //Set<String> b= pyobj.keySet();
+                // Instantiate the RequestQueue.
+                RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
+                String url ="https://garfieldapi.herokuapp.com";
 
-                Chatbot answer = new
-                        Chatbot(obj.toString(),
-                        "Bot",
-                        getUserPhotoUrl(),
-                        null /* no image */);
-                mDatabase.getReference().child(MESSAGES_CHILD).push().setValue(answer);
+                // Request a string response from the provided URL.
+                StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
+                        new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                                Chatbot answer = new
+                                        Chatbot(response,
+                                        "Bot",
+                                        getUserPhotoUrl(),
+                                        null /* no image */) ;
+                                mDatabase.getReference().child(path).push().setValue(answer);
+                            }
+                        }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Chatbot answer = new
+                                Chatbot("Error",
+                                "Bot",
+                                getUserPhotoUrl(),
+                                null /* no image */) ;
+                        mDatabase.getReference().child(path).push().setValue(answer);
+                    }
+                }){
+                    protected Map<String, String> getParams(){
+                        Map<String, String> paramV = new HashMap<>();
+                        paramV.put("msg", ms);
+                        return paramV;
+                    }
+                };
+
+                // Add the request to the RequestQueue.
+                queue.add(stringRequest);
+
+
 
             }
 
@@ -334,6 +388,24 @@ public class MainActivity extends AppCompatActivity {
         FirebaseUser user = mFirebaseAuth.getCurrentUser();
         if (user != null) {
             return user.getDisplayName();
+        }
+
+        return ANONYMOUS;
+    }
+
+    private String getEmail() {
+        FirebaseUser user = mFirebaseAuth.getCurrentUser();
+        if (user != null) {
+            return user.getEmail();
+        }
+
+        return ANONYMOUS;
+    }
+
+    private String getID() {
+        FirebaseUser user = mFirebaseAuth.getCurrentUser();
+        if (user != null) {
+            return user.getUid();
         }
 
         return ANONYMOUS;

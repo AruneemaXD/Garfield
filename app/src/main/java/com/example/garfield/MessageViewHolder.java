@@ -18,7 +18,6 @@ import com.google.firebase.storage.StorageReference;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 
-
 public class MessageViewHolder extends RecyclerView.ViewHolder {
 
     private static final String TAG = "MessageViewHolder";
@@ -55,10 +54,12 @@ public class MessageViewHolder extends RecyclerView.ViewHolder {
                 ansrImageView.setVisibility(ImageView.VISIBLE);
                 messageTextView.setVisibility(TextView.GONE);
                 messengerImageView.setVisibility(ImageView.GONE);
+                messengerImageView.setVisibility(ImageView.GONE);
             }
             else {
-                messageTextView.setText(CBMessage.getText());
+                messageTextView.setText(CBMessage.getText() );
                 messageTextView.setVisibility(TextView.VISIBLE);
+                Glide.with(messengerImageView.getContext()).load(CBMessage.getPhotoUrl()).into(messengerImageView);
                 messengerImageView.setVisibility(ImageView.VISIBLE);
                 ansTextView.setVisibility(TextView.GONE);
                 ansrImageView.setVisibility(ImageView.GONE);
@@ -100,5 +101,5 @@ public class MessageViewHolder extends RecyclerView.ViewHolder {
             messageTextView.setVisibility(TextView.GONE);
 
         }
-    }
+    };
 }
