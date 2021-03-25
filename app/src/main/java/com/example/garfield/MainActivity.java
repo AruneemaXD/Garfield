@@ -64,6 +64,8 @@ import com.google.firebase.storage.UploadTask;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -210,6 +212,9 @@ public class MainActivity extends AppCompatActivity {
                 null /* no image */) ;
         mDatabase.getReference().child(path).push().setValue(Welcome);
 
+        //Prev response
+        final String[] prevres = {""};
+
                 // When the send button is clicked, send a text message
         mBinding.sendButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -224,6 +229,12 @@ public class MainActivity extends AppCompatActivity {
                 mDatabase.getReference().child(path).push().setValue(cbMessage);
                 mBinding.messageEditText.setText("");
 
+                Boolean y = ms.equals("Yes") || ms.equals("yes") || ms.equals("Ok") || ms.equals("ok") ;
+
+
+                boolean doccall = prevres[0].toString().toLowerCase().contains("doctor".toLowerCase());
+                boolean emercall = prevres[0].toString().toLowerCase().contains(userpd.getEmergencyContact().toLowerCase());
+                boolean homecall = prevres[0].toString().toLowerCase().contains("take".toLowerCase());
 
 
                 // Instantiate the RequestQueue.
@@ -235,26 +246,39 @@ public class MainActivity extends AppCompatActivity {
                         new Response.Listener<String>() {
                             @Override
                             public void onResponse(String response) {
-                                if (response == "ff"){
+
+                                if (y){
+
+                                    if(homecall){
+                                    Uri gmmIntentUri = Uri.parse("google.navigation:?q=" + Uri.encode(userpd.getAddress()));
+                                    Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                                    mapIntent.setPackage("com.google.android.apps.maps");
+                                    startActivity(mapIntent);}
+
+                                    if(doccall){
+                                        Intent callIntent = new Intent(Intent.ACTION_DIAL);
+                                        callIntent.setData(Uri.parse("tel:"+ Long.parseLong(userpd.getDoctorNo())));//change the number
+                                        startActivity(callIntent);}
+
+                                    if(emercall){
+                                        Intent callIntent = new Intent(Intent.ACTION_DIAL);
+                                        callIntent.setData(Uri.parse("tel:"+ Long.parseLong(userpd.getEmergencyContactNo())));//change the number
+                                        startActivity(callIntent);}
 
 
-
-
-
-
-
-
+                                    prevres[0] = "Android Intent";
                                 }
                                 else {
-                                    Chatbot answer = new
-                                            Chatbot(response,
-                                            "Bot",
-                                            getUserPhotoUrl(),
-                                            null /* no image */) ;
-                                    mDatabase.getReference().child(path).push().setValue(answer);
-                                }
-                            }
-                        }, new Response.ErrorListener() {
+
+                                        Chatbot answer = new
+                                                Chatbot(response,
+                                                "Bot",
+                                                getUserPhotoUrl(),
+                                                null /* no image */);
+                                        prevres[0] = response;
+                                        mDatabase.getReference().child(path).push().setValue(answer);
+                                      }
+                        }}, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         Chatbot answer = new
@@ -284,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-            }
+                        }
 
         });
 
